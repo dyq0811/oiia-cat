@@ -75,6 +75,8 @@
       startGame();
     } else if (e.code === 'KeyP' || e.code === 'Escape') {
       togglePause();
+    } else if (e.code === 'KeyM') {
+      micBtn.click();
     } else if (['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
       setSpeed(Number(e.code.slice(-1)) - 1);
     }
@@ -130,7 +132,7 @@
   }
 
   // ---------- Microphone ("oi!") ----------
-  let analyser, micBuf, micArmed = true, lastShout = 0, bufferedUntil = 0;
+  let analyser, micStream, micSource, micBuf, micArmed = true, lastShout = 0, bufferedUntil = 0;
   const MIC_MAX = 0.25;
 
   function micThreshold() {
@@ -142,19 +144,30 @@
   sensitivityEl.addEventListener('input', updateThresholdMarker);
   updateThresholdMarker();
 
+  function micOff() {
+    micSource.disconnect();
+    micStream.getTracks().forEach((t) => t.stop());
+    analyser = micSource = micStream = null;
+    bufferedUntil = 0;
+    micLevelEl.style.width = '0';
+    micBtn.textContent = 'Mic off — click to enable';
+    micBtn.classList.remove('active');
+  }
+
   micBtn.addEventListener('click', async () => {
     micBtn.blur();
-    if (analyser) return;
+    if (analyser) { micOff(); return; }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      micStream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       });
       const actx = getAudioCtx();
       analyser = actx.createAnalyser();
       analyser.fftSize = 512;
       micBuf = new Float32Array(analyser.fftSize);
-      actx.createMediaStreamSource(stream).connect(analyser);
-      micBtn.textContent = 'Mic on 🎤';
+      micSource = actx.createMediaStreamSource(micStream);
+      micSource.connect(analyser);
+      micBtn.textContent = 'Mic on 🎤 — click to disable';
       micBtn.classList.add('active');
     } catch (err) {
       micBtn.textContent = 'Mic blocked';
