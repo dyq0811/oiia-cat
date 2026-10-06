@@ -16,7 +16,40 @@ main {
   text-align: center;
 }
 
-h1 { margin: 0 0 12px; letter-spacing: 2px; }
+h1 {
+  margin: 0 0 14px;
+  font-family: 'Pixelify Sans', monospace;
+  font-weight: 700;
+  font-size: 42px;
+  letter-spacing: 3px;
+  color: #ff8fb8;
+  /* Hard-edged offsets give a blocky pixel outline + drop shadow */
+  text-shadow:
+    3px 0 #5a3d5c, -3px 0 #5a3d5c, 0 3px #5a3d5c, 0 -3px #5a3d5c,
+    3px 3px #5a3d5c, -3px 3px #5a3d5c, 3px -3px #5a3d5c, -3px -3px #5a3d5c,
+    6px 6px #b9e4ff;
+  position: relative;
+}
+
+/* Duplicate text clipped to a moving white band; steps() keeps it pixelly. */
+h1::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  text-shadow: none;
+  background: linear-gradient(110deg, transparent 46%, rgba(255, 255, 255, 0.95) 48.5%, rgba(255, 255, 255, 0.95) 51.5%, transparent 54%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 2.8s steps(28) infinite;
+  pointer-events: none;
+}
+
+@keyframes shine {
+  0% { background-position: 100% 0; }
+  60%, 100% { background-position: 0 0; }
+}
 
 .stage {
   position: relative;
