@@ -24,7 +24,7 @@ Open http://localhost:8000 in your browser.
 | Change speed | `1` Low · `2` Medium · `3` High |
 | Pause / resume | `P` or `Esc` |
 
-- Every game starts at **Low** speed. Change it any time during a run.
+- The game starts at **Low** speed. Change it any time (even while paused); restarts keep your choice.
 - Bees show up after 200 points. Low bees: jump. High bees: run under.
 
 ## Voice control

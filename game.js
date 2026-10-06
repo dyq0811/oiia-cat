@@ -27,7 +27,6 @@
 
   function reset() {
     state = 'ready';
-    setSpeed(0);
     cat = { x: 60, y: GROUND_Y, vy: 0, w: 36, h: 48, spin: 0, onGround: true };
     obstacles = [];
     clouds = [{ x: 140, y: 40 }, { x: 420, y: 70 }, { x: 700, y: 34 }];
@@ -505,6 +504,7 @@
     requestAnimationFrame(frame);
   }
 
+  setSpeed(0);
   reset();
   requestAnimationFrame(frame);
 })();
