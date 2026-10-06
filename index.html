@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OIIA Runner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h1>OIIA Runner</h1>
+
+    <div class="stage">
+      <canvas id="game" width="800" height="250"></canvas>
+    </div>
+
+    <div class="controls">
+      <div class="group">
+        <span class="label">Speed</span>
+        <button data-speed="0" class="speed">1 · Low</button>
+        <button data-speed="1" class="speed">2 · Medium</button>
+        <button data-speed="2" class="speed">3 · High</button>
+      </div>
+
+      <div class="group">
+        <button id="pauseBtn">Pause (P)</button>
+      </div>
+
+      <div class="group">
+        <button id="micBtn">Enable "oi!" mic</button>
+        <div class="meter"><div id="micLevel"></div><div id="micThreshold"></div></div>
+        <label class="label">Sensitivity
+          <input id="sensitivity" type="range" min="1" max="100" value="80" />
+        </label>
+      </div>
+    </div>
+
+    <p class="help">
+      <kbd>0</kbd> start &nbsp;·&nbsp;
+      <kbd>Space</kbd> or shout <b>"oi!"</b> to jump &nbsp;·&nbsp;
+      <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> change speed &nbsp;·&nbsp;
+      <kbd>P</kbd>/<kbd>Esc</kbd> pause
+    </p>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

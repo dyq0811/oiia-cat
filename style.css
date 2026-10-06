@@ -1,0 +1,83 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f7f7;
+  color: #535353;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+main {
+  width: min(800px, 96vw);
+  text-align: center;
+}
+
+h1 { margin: 0 0 12px; letter-spacing: 2px; }
+
+.stage {
+  position: relative;
+  border: 2px solid #535353;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.group { display: flex; align-items: center; gap: 6px; }
+
+.label { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 2px solid #535353;
+  background: #fff;
+  color: #535353;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover { background: #eee; }
+button.active { background: #535353; color: #fff; }
+
+.meter {
+  position: relative;
+  width: 80px;
+  height: 10px;
+  border: 1px solid #535353;
+  border-radius: 3px;
+  overflow: hidden;
+}
+#micLevel { height: 100%; width: 0; background: #4caf50; transition: width 50ms; }
+#micThreshold { position: absolute; top: 0; bottom: 0; width: 2px; background: #e53935; }
+
+.help { font-size: 13px; margin-top: 14px; }
+
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 0 1px;
+  border: 1px solid #aaa;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+}
