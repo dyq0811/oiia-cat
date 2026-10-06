@@ -22,15 +22,18 @@
   const sensitivityEl = document.getElementById('sensitivity');
 
   let state; // 'ready' | 'running' | 'paused' | 'over'
-  let speedLevel, cat, obstacles, clouds, score, scroll, nextGap, lives;
+  let speedLevel, cat, obstacles, clouds, score, scroll, nextGap, lives, night, skyTime;
   let hiScore = Number(localStorage.getItem('oiiaHiScore')) || 0;
   const MAX_LIVES = 3;
   const HURT_TIME = 1.5;
+  const DAY_LENGTH = 6;
 
   function reset() {
     state = 'ready';
     cat = { x: 60, y: GROUND_Y, vy: 0, w: 36, h: 48, spin: 0, onGround: true, hurt: 0 };
     lives = MAX_LIVES;
+    night = 0;
+    skyTime = 0;
     obstacles = [];
     clouds = [{ x: 140, y: 40 }, { x: 420, y: 70 }, { x: 700, y: 34 }];
     score = 0;
@@ -284,6 +287,8 @@
     }
 
     score += dx * 0.025;
+    skyTime += dt;
+    night = getSkyState(skyTime).darkness;
     cat.hurt = Math.max(0, cat.hurt - dt);
     if (cat.hurt > 0) return;
 
@@ -404,13 +409,28 @@
     });
   }
 
-  // Static sky is rendered once: pastel bands with checkerboard dithering between them.
-  const skyLayer = document.createElement('canvas');
-  skyLayer.width = W;
-  skyLayer.height = H;
-  (() => {
-    const g = skyLayer.getContext('2d');
-    const bands = ['#c8e6ff', '#d7edff', '#e6f3ff', '#f6eefb', '#ffe8f0', '#fff0e4'];
+  function getSkyState(time) {
+    const phase = (time % (DAY_LENGTH * 2)) / (DAY_LENGTH * 2);
+    const progress = (phase * 4) % 1;
+    const blend = progress ** 3 * (progress * (progress * 6 - 15) + 10);
+    const altitude = Math.cos(phase * Math.PI * 2);
+    return { phase, band: Math.floor(phase * 4), blend, altitude, darkness: (1 - altitude) / 2 };
+  }
+
+  function mixColor(from, to, amount) {
+    const channels = [1, 3, 5].map((offset) => {
+      const start = parseInt(from.slice(offset, offset + 2), 16);
+      const end = parseInt(to.slice(offset, offset + 2), 16);
+      return Math.round(start + (end - start) * amount);
+    });
+    return `rgb(${channels.join(',')})`;
+  }
+
+  function createSkyLayer(bands) {
+    const layer = document.createElement('canvas');
+    layer.width = W;
+    layer.height = H;
+    const g = layer.getContext('2d');
     const bandH = GROUND_Y / bands.length;
     const P = 6;
     bands.forEach((col, i) => {
@@ -422,14 +442,33 @@
         if ((x / P) % 2 === 0) g.fillRect(x, i * bandH, P, P);
       }
     });
-    // Twinkly pixel sparkles
-    g.fillStyle = '#ffffff';
-    for (const [sx, sy] of [[90, 60], [330, 30], [560, 95], [760, 70], [250, 110], [640, 40]]) {
-      g.fillRect(sx, sy - 3, 3, 9);
-      g.fillRect(sx - 3, sy, 9, 3);
-    }
-    drawPixels(SUN, SUN_COLORS, 470, 30, 5, g);
-  })();
+    return layer;
+  }
+
+  const skyLayers = [
+    ['#c8e6ff', '#d7edff', '#e6f3ff', '#f6eefb', '#ffe8f0', '#fff0e4'],
+    ['#555778', '#826382', '#b7758c', '#eb9291', '#ffb18b', '#ffd697'],
+    ['#1b1e45', '#232757', '#2c3068', '#363a78', '#434584', '#52518f'],
+    ['#6679a1', '#9396b8', '#bdb0cc', '#e7bfd1', '#ffd4be', '#ffe7bc'],
+  ].map(createSkyLayer);
+
+  const MOON = [
+    '..MMMMM..',
+    '.MMMMMMM.',
+    'MMMMMMMMM',
+    'MeeMMMeeM',
+    'MMMMMMMMM',
+    'MpMMmMMpM',
+    'MMMMMMMMM',
+    '.MMMMMMM.',
+    '..MMMMM..',
+  ];
+  const MOON_COLORS = { M: '#fff4c8', e: '#6b5a7a', m: '#6b5a7a', p: '#ffb8cc' };
+  const STARS = Array.from({ length: 40 }, (_, i) => [
+    (i * 197 + 37) % W,
+    56 + ((i * 89) % (GROUND_Y - 130)),
+    i % 3 === 0 ? 3 : 2,
+  ]);
 
   function drawHills(offset, P, base, amp, freq, seed, color, topColor) {
     const first = Math.floor(offset / P);
@@ -522,17 +561,73 @@
   function drawObstacle(o) {
     const s = SPRITES[o.kind];
     const bob = o.kind === 'bee' ? Math.round(Math.sin(scroll * 0.06)) * 3 : 0;
+    ctx.save();
+    ctx.globalAlpha = 1;
     for (let i = 0; i < o.count; i++) {
-      drawPixels(s.map, s.colors, o.x + i * (o.sw + 4), o.y + bob, s.p);
+      const x = Math.round(o.x + i * (o.sw + 4));
+      const y = o.y + bob;
+      for (const [width, color] of [[2, '#fff9e8'], [1, '#535353']]) {
+        ctx.fillStyle = color;
+        s.map.forEach((row, rowIndex) => {
+          for (let column = 0; column < row.length; column++) {
+            if (row[column] === '.') continue;
+            ctx.fillRect(x + column * s.p - width, y + rowIndex * s.p - width,
+              s.p + width * 2, s.p + width * 2);
+          }
+        });
+      }
+      drawPixels(s.map, s.colors, x, y, s.p);
     }
+    ctx.restore();
   }
 
   function draw() {
-    ctx.drawImage(skyLayer, 0, 0);
-    clouds.forEach((c) => drawPixels(CLOUD, CLOUD_COLORS, c.x, c.y, 4));
+    const sky = getSkyState(skyTime);
+    ctx.drawImage(skyLayers[sky.band], 0, 0);
+    ctx.globalAlpha = sky.blend;
+    ctx.drawImage(skyLayers[(sky.band + 1) % skyLayers.length], 0, 0);
+    ctx.globalAlpha = 1;
+    const orbit = Math.sin(sky.phase * Math.PI * 2);
+    const warmth = (1 - Math.abs(sky.altitude)) ** 3;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 28, W, GROUND_Y - 28);
+    ctx.clip();
+    ctx.globalAlpha = Math.max(0, Math.min(1, (sky.altitude + 0.15) / 0.35));
+    drawPixels(SUN, { ...SUN_COLORS, Y: mixColor('#ffd66e', '#ff987a', warmth) },
+      W / 2 - 25 + orbit * 240, GROUND_Y - 90 - sky.altitude * 90, 5);
+    ctx.globalAlpha = Math.max(0, Math.min(1, (-sky.altitude + 0.15) / 0.35));
+    drawPixels(MOON, MOON_COLORS,
+      W / 2 - 22 - orbit * 240, GROUND_Y - 90 + sky.altitude * 90, 5);
+    const starVisibility = Math.max(0, (night - 0.5) * 2);
+    STARS.forEach(([sx, sy, size], index) => {
+      const sparkle = (1 + Math.sin(skyTime * 2 + index * 1.7)) / 2;
+      ctx.globalAlpha = starVisibility * (0.55 + sparkle * 0.45);
+      ctx.fillStyle = '#fff4d9';
+      ctx.fillRect(sx, sy, size, size);
+      ctx.globalAlpha *= sparkle ** 4;
+      if (index % 3 === 0) {
+        ctx.fillRect(sx - 2, sy + 1, 6, 1);
+        ctx.fillRect(sx + 1, sy - 2, 1, 6);
+      }
+    });
+    ctx.globalAlpha = 1 - night;
+    const cloudColors = {
+      ...CLOUD_COLORS,
+      X: mixColor('#ffffff', '#ffc4b6', warmth),
+      S: mixColor('#e6ecf7', '#d595ab', warmth),
+    };
+    clouds.forEach((c) => drawPixels(CLOUD, cloudColors, c.x, c.y, 4));
+    ctx.restore();
     drawHills(scroll * 0.2, 10, 70, 22, 0.13, 0.7, '#cfe9e4', '#e2f4ef');
     drawHills(scroll * 0.45, 8, 38, 14, 0.21, 2.1, '#a8dcb4', '#c2ead0');
     drawGround();
+    ctx.fillStyle = `rgba(255, 153, 117, ${warmth * 0.18})`;
+    ctx.fillRect(0, GROUND_Y - 100, W, H - GROUND_Y + 100);
+    if (night > 0) {
+      ctx.fillStyle = `rgba(20, 22, 60, ${0.35 * night})`;
+      ctx.fillRect(0, GROUND_Y - 100, W, H - GROUND_Y + 100);
+    }
     obstacles.forEach(drawObstacle);
     drawCat();
 
@@ -540,7 +635,7 @@
       drawPixels(HEART, i < lives ? HEART_FULL : HEART_EMPTY, 12 + i * 26, 34, 3);
     }
 
-    ctx.fillStyle = INK;
+    ctx.fillStyle = mixColor(INK, '#f3efff', night);
     ctx.font = 'bold 16px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(`HI ${String(hiScore).padStart(5, '0')}  ${String(Math.floor(score)).padStart(5, '0')}`, W - 12, 24);
