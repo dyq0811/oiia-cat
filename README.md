@@ -3,6 +3,8 @@
 A tiny endless-runner game, like Chrome's dinosaur game, starring the spinning OIIA cat.
 Jump over cucumbers, vacuums, spray bottles and bees!
 
+![OIIA Kitten Runner gameplay](screenshot.png)
+
 ## Run it
 
 Download the files, then start a local server inside the folder:
