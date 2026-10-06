@@ -26,15 +26,21 @@
       </div>
 
       <div class="group">
+        <button id="spinCat" title="Click me!" aria-label="Spin the OIIA cat">
+          <canvas class="disco" width="128" height="168"></canvas>
+          <div class="spin-shadow"></div>
+          <div class="spin-body"></div>
+        </button>
         <button id="pauseBtn">Pause (P)</button>
       </div>
 
       <div class="group">
-        <button id="micBtn">Enable "oi!" mic</button>
-        <div class="meter"><div id="micLevel"></div><div id="micThreshold"></div></div>
-        <label class="label">Sensitivity
+        <button id="micBtn">🎤 Mic: Off</button>
+        <label class="label" for="sensitivity">Sensitivity</label>
+        <div class="mic-tune">
+          <div class="meter"><div id="micLevel"></div><div id="micThreshold"></div></div>
           <input id="sensitivity" type="range" min="1" max="100" value="80" />
-        </label>
+        </div>
       </div>
     </div>
 

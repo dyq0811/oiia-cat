@@ -65,13 +65,22 @@ canvas {
 }
 
 .controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px 16px;
   align-items: center;
   margin-top: 12px;
 }
+.controls > .group:first-child { justify-self: start; }
+.controls > .group:last-child { justify-self: end; }
+
+@media (max-width: 760px) {
+  .controls { grid-template-columns: 1fr; }
+  .controls > .group { justify-self: center !important; }
+}
+
+#pauseBtn { min-width: 96px; }
+#micBtn { min-width: 104px; }
 
 .group { display: flex; align-items: center; gap: 6px; }
 
@@ -91,9 +100,12 @@ button {
 button:hover { background: #eee; }
 button.active { background: #535353; color: #fff; }
 
+.mic-tune { display: flex; flex-direction: column; gap: 4px; width: 90px; }
+.mic-tune input { width: 100%; margin: 0; }
+
 .meter {
   position: relative;
-  width: 80px;
+  width: 100%;
   height: 10px;
   border: 1px solid #535353;
   border-radius: 3px;
@@ -103,6 +115,46 @@ button.active { background: #535353; color: #fff; }
 #micThreshold { position: absolute; top: 0; bottom: 0; width: 2px; background: #e53935; }
 
 .help { font-size: 13px; margin-top: 14px; }
+
+#spinCat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+#spinCat:hover { background: none; }
+.disco {
+  width: 30px;
+  height: 40px;
+  margin-bottom: -10px;
+  image-rendering: pixelated;
+}
+.spin-body {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  background: url(oiia.png) 0 0 / 52px 52px no-repeat;
+}
+/* Every other frame of oiia.gif: 10 cols x 5 rows of 52px cells. */
+.spin-body.spinning {
+  background-image: url(oiia-spin.webp);
+  background-size: 520px 260px;
+}
+.spin-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 30px;
+  height: 6px;
+  margin-left: -16px;
+  border-radius: 50%;
+  background: rgba(60, 40, 70, 0.28);
+  filter: blur(1px);
+}
 
 kbd {
   display: inline-block;

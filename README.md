@@ -5,6 +5,8 @@ Jump over cucumbers, vacuums, spray bottles and bees!
 
 ![OIIA Kitten Runner gameplay](screenshot.png)
 
+🪩 Psst — click the tiny cat under the disco ball next to Pause. The faster you click, the harder it OIIA-OIIAs.
+
 ## Run it
 
 Download the files, then start a local server inside the folder:
@@ -28,11 +30,12 @@ Open http://localhost:8000 in your browser.
 | Mic on / off | `M` or the mic button |
 
 - The game starts at **Low** speed. Change it any time (even while paused); restarts keep your choice.
+- You have **3 lives** (hearts, top-left). After a hit the cat blinks and can't be hurt for a moment.
 - Bees show up after 200 points. Low bees: jump. High bees: run under.
 
 ## Voice control
 
-1. Click **Enable "oi!" mic** (or press `M`) and allow microphone access.
+1. Click **🎤 Mic: Off** (or press `M`) and allow microphone access.
 2. Shout "oi!" to jump.
 3. Use the **Sensitivity** slider if it's too jumpy or not reacting. The red mark on the meter is the trigger level.
 4. Click the button or press `M` again to turn the mic off.

@@ -22,12 +22,15 @@
   const sensitivityEl = document.getElementById('sensitivity');
 
   let state; // 'ready' | 'running' | 'paused' | 'over'
-  let speedLevel, cat, obstacles, clouds, score, scroll, nextGap;
+  let speedLevel, cat, obstacles, clouds, score, scroll, nextGap, lives;
   let hiScore = Number(localStorage.getItem('oiiaHiScore')) || 0;
+  const MAX_LIVES = 3;
+  const HURT_TIME = 1.5;
 
   function reset() {
     state = 'ready';
-    cat = { x: 60, y: GROUND_Y, vy: 0, w: 36, h: 48, spin: 0, onGround: true };
+    cat = { x: 60, y: GROUND_Y, vy: 0, w: 36, h: 48, spin: 0, onGround: true, hurt: 0 };
+    lives = MAX_LIVES;
     obstacles = [];
     clouds = [{ x: 140, y: 40 }, { x: 420, y: 70 }, { x: 700, y: 34 }];
     score = 0;
@@ -131,6 +134,37 @@
     osc.stop(t + 0.32);
   }
 
+  const FORMANTS = { o: [500, 850], i: [300, 2300], a: [800, 1250] };
+
+  function playVowel(v, pitch, dur) {
+    const ac = getAudioCtx();
+    const t = ac.currentTime;
+    const osc = ac.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(pitch * 0.92, t);
+    osc.frequency.linearRampToValueAtTime(pitch, t + dur * 0.4);
+
+    const out = ac.createGain();
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.exponentialRampToValueAtTime(0.6, t + 0.012);
+    out.gain.setValueAtTime(0.6, t + dur * 0.7);
+    out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    out.connect(ac.destination);
+
+    FORMANTS[v].forEach((f, k) => {
+      const bp = ac.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.Q.value = 8;
+      bp.frequency.value = f;
+      const g = ac.createGain();
+      g.gain.value = k ? 0.6 : 1;
+      osc.connect(bp).connect(g).connect(out);
+    });
+
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
   // ---------- Microphone ("oi!") ----------
   let analyser, micStream, micSource, micBuf, micArmed = true, lastShout = 0, bufferedUntil = 0;
   const MIC_MAX = 0.25;
@@ -150,7 +184,7 @@
     analyser = micSource = micStream = null;
     bufferedUntil = 0;
     micLevelEl.style.width = '0';
-    micBtn.textContent = 'Mic off — click to enable';
+    micBtn.textContent = '🎤 Mic: Off';
     micBtn.classList.remove('active');
   }
 
@@ -167,7 +201,7 @@
       micBuf = new Float32Array(analyser.fftSize);
       micSource = actx.createMediaStreamSource(micStream);
       micSource.connect(analyser);
-      micBtn.textContent = 'Mic on 🎤 — click to disable';
+      micBtn.textContent = '🎤 Mic: On';
       micBtn.classList.add('active');
     } catch (err) {
       micBtn.textContent = 'Mic blocked';
@@ -250,11 +284,18 @@
     }
 
     score += dx * 0.025;
+    cat.hurt = Math.max(0, cat.hurt - dt);
+    if (cat.hurt > 0) return;
 
     // Hitbox is a bit smaller than the sprite for fairness.
     const cx = cat.x + 6, cy = cat.y - cat.h + 6, cw = cat.w - 12, ch = cat.h - 8;
     for (const o of obstacles) {
       if (cx < o.x + o.w && cx + cw > o.x && cy < o.y + o.h && cy + ch > o.y) {
+        lives--;
+        if (lives > 0) {
+          cat.hurt = HURT_TIME;
+          break;
+        }
         state = 'over';
         if (score > hiScore) {
           hiScore = Math.floor(score);
@@ -448,13 +489,15 @@
 
   function drawCat() {
     const { x, y, w, h } = cat;
+    // Blink while invincible after a hit.
+    const visible = cat.hurt === 0 || Math.floor(cat.hurt * 10) % 2 === 0;
     ctx.save();
     ctx.translate(x + w / 2, y);
     // Fake Y-axis rotation by squashing horizontally.
     const sx = Math.cos(cat.spin);
     ctx.scale(Math.abs(sx) < 0.08 ? 0.08 : sx, 1);
     // Cat's feet sit ~93% down the frame, body centred at ~46% across.
-    ctx.drawImage(catImg, -SPRITE * 0.46, -SPRITE * 0.93, SPRITE, SPRITE);
+    if (visible) ctx.drawImage(catImg, -SPRITE * 0.46, -SPRITE * 0.93, SPRITE, SPRITE);
     ctx.restore();
 
     if (!cat.onGround) {
@@ -464,6 +507,17 @@
       ctx.fillText(letters[Math.floor(cat.spin / 1.2) % 4], x + w + 4, y - h - 4);
     }
   }
+
+  const HEART = [
+    '.XX.XX.',
+    'XhXXXXX',
+    'XXXXXXX',
+    '.XXXXX.',
+    '..XXX..',
+    '...X...',
+  ];
+  const HEART_FULL = { X: '#ff5c8a', h: '#ffffff' };
+  const HEART_EMPTY = { X: '#cfc6d6', h: '#cfc6d6' };
 
   function drawObstacle(o) {
     const s = SPRITES[o.kind];
@@ -481,6 +535,10 @@
     drawGround();
     obstacles.forEach(drawObstacle);
     drawCat();
+
+    for (let i = 0; i < MAX_LIVES; i++) {
+      drawPixels(HEART, i < lives ? HEART_FULL : HEART_EMPTY, 12 + i * 26, 34, 3);
+    }
 
     ctx.fillStyle = INK;
     ctx.font = 'bold 16px monospace';
@@ -506,12 +564,124 @@
     ctx.textAlign = 'left';
   }
 
+  // ---------- Corner spin cat ----------
+  const spinCatBtn = document.getElementById('spinCat');
+  const spinBody = spinCatBtn.querySelector('.spin-body');
+  const TWO_PI = Math.PI * 2;
+  const QUARTER = Math.PI / 2;
+  const OIIA = ['o', 'i', 'i', 'a', 'o', 'o'];
+  let spinAngle = 0, spinVel = 0, lastQuarter = 0, lastSyllable = 0, lastSpinFrame = -1;
+
+  // Every other frame of oiia.gif (0, 2, … 92).
+  const SPIN_FRAMES = 47;
+  const SPIN_COLS = 10;
+  const SPIN_CELL = 52;
+  const FRAMES_PER_RAD = 1.6;
+  new Image().src = 'oiia-spin.webp';
+
+  // Disco ball: mosaic tiles on a sphere, drawn at 2x for crisp pixels.
+  const discoCanvas = spinCatBtn.querySelector('.disco');
+  const dctx = discoCanvas.getContext('2d');
+  dctx.scale(2, 2);
+  const DISCO_TINTS = ['#ffffff', '#ffd6e7', '#d6ecff', '#fff3c4', '#e6d9ff'];
+  let discoPhase = 0;
+
+  function drawDisco(now) {
+    const cx = 32, cy = 50, r = 22;
+    const spinning = spinVel > 0;
+    dctx.clearRect(0, 0, 64, 84);
+
+    dctx.fillStyle = '#8a8a9a';
+    dctx.fillRect(cx - 1, 0, 2, cy - r + 1);
+    dctx.fillStyle = '#6b6b7b';
+    dctx.fillRect(cx - 4, cy - r - 2, 8, 4);
+
+    const LAT = 9, LON = 18;
+    for (let i = 0; i < LAT; i++) {
+      const lat = -Math.PI / 2 + ((i + 0.5) / LAT) * Math.PI;
+      const y = cy + r * Math.sin(lat);
+      const h = Math.ceil(r * (Math.PI / LAT)) + 1;
+      for (let j = 0; j < LON; j++) {
+        const lon = (j / LON) * TWO_PI + discoPhase;
+        const z = Math.cos(lon);
+        if (z <= 0) continue;
+        const x = cx + r * Math.cos(lat) * Math.sin(lon);
+        const w = Math.max(1, Math.ceil(r * Math.cos(lat) * (TWO_PI / LON) * z) + 1);
+        const light = Math.max(0, 0.35 + 0.65 * z * Math.cos(lat - 0.5));
+        const seed = (i * 31 + j * 17) % 97;
+        const glint = spinning && (seed + Math.floor(now / 90)) % 23 === 0;
+        const rx = Math.round(x - w / 2), ry = Math.round(y - h / 2);
+        dctx.globalAlpha = 1;
+        dctx.fillStyle = glint ? '#ffffff' : DISCO_TINTS[seed % DISCO_TINTS.length];
+        dctx.fillRect(rx, ry, w, h);
+        if (!glint) {
+          dctx.globalAlpha = 1 - light;
+          dctx.fillStyle = '#4a4a66';
+          dctx.fillRect(rx, ry, w, h);
+        }
+      }
+    }
+    dctx.globalAlpha = 1;
+
+    // Twinkling 4-point sparkles while spinning
+    if (spinning) {
+      for (let k = 0; k < 4; k++) {
+        if (Math.sin(now / 120 + k * 2.1) < 0.2) continue;
+        const a = k * 1.7 + now / 400;
+        const sx = Math.round(cx + Math.cos(a) * (r + 6));
+        const sy = Math.round(cy + Math.sin(a) * (r + 4));
+        dctx.fillStyle = DISCO_TINTS[(k + 1) % DISCO_TINTS.length];
+        dctx.fillRect(sx - 1, sy - 3, 2, 6);
+        dctx.fillRect(sx - 3, sy - 1, 6, 2);
+      }
+    }
+  }
+
+  spinCatBtn.addEventListener('click', () => {
+    spinCatBtn.blur();
+    getAudioCtx();
+    // Capped so it doesn't strobe backwards at 60fps.
+    spinVel = Math.min(spinVel + 5, 40);
+  });
+
+  function updateSpinCat(dt, now) {
+    spinAngle += spinVel * dt;
+    spinVel *= Math.exp(-1.1 * dt);
+    if (spinVel < 1.5) spinVel = 0;
+
+    // One syllable per quarter turn: O-I-I-A-O-O, faster spin = faster + higher.
+    const q = Math.floor(spinAngle / QUARTER);
+    if (q !== lastQuarter) {
+      if (q > lastQuarter && spinVel > 0 && now - lastSyllable > 70) {
+        lastSyllable = now;
+        const dur = Math.min(0.25, Math.max(0.07, QUARTER / spinVel));
+        const pitch = Math.min(700, 300 + spinVel * 9);
+        const v = OIIA[((q % OIIA.length) + OIIA.length) % OIIA.length];
+        playVowel(v, v === 'i' ? pitch * 1.12 : pitch, dur);
+      }
+      lastQuarter = q;
+    }
+
+    const spinning = spinVel > 0;
+    spinBody.classList.toggle('spinning', spinning);
+    if (spinning) discoPhase += spinVel * dt * 0.25;
+    drawDisco(now);
+    const f = spinning ? Math.floor(spinAngle * FRAMES_PER_RAD) % SPIN_FRAMES : -1;
+    if (f !== lastSpinFrame) {
+      lastSpinFrame = f;
+      spinBody.style.backgroundPosition = spinning
+        ? `${-(f % SPIN_COLS) * SPIN_CELL}px ${-Math.floor(f / SPIN_COLS) * SPIN_CELL}px`
+        : '';
+    }
+  }
+
   // ---------- Loop ----------
   let lastTime = performance.now();
   function frame(now) {
     const dt = Math.min(0.05, (now - lastTime) / 1000);
     lastTime = now;
     pollMic(now);
+    updateSpinCat(dt, now);
     if (state === 'running') update(dt);
     draw();
     requestAnimationFrame(frame);
