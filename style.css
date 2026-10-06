@@ -116,6 +116,10 @@ button.active { background: #535353; color: #fff; }
 
 .help { font-size: 13px; margin-top: 14px; }
 
+.credit { font-size: 8px; line-height: 1.5; margin: 8px 0 0; color: #8a8a8a; letter-spacing: 0.3px; }
+.credit a { color: inherit; text-decoration: none; }
+.credit a:hover { text-decoration: underline; }
+
 #spinCat {
   position: relative;
   display: flex;

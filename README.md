@@ -1,9 +1,9 @@
 # OIIA Kitten Runner
 
+by [@dyq0811](https://github.com/dyq0811)
+
 A tiny endless-runner game, like Chrome's dinosaur game, starring the spinning OIIA cat.
 Jump over cucumbers, vacuums, spray bottles and bees!
-
-Developers: [@dyq0811](https://github.com/dyq0811), [@google-antigravity](https://github.com/google-antigravity)
 
 ![OIIA Kitten Runner gameplay](screenshot.png)
 
@@ -43,5 +43,7 @@ Open http://localhost:8000 in your browser.
 4. Click the button or press `M` again to turn the mic off.
 
 ## Credits
+
+Game made by [@dyq0811](https://github.com/dyq0811).
 
 The OIIA cat image is from the official [W&W "OIIA OIIA (Spinning Cat)"](https://www.wandwmusic.com/oiia) page.
