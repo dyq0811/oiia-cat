@@ -2,7 +2,8 @@
 
 A tiny endless-runner game, like Chrome's dinosaur game, starring the spinning OIIA cat.
 Jump over cucumbers, vacuums, spray bottles and bees!
-Devekopers: [@dyq0811](https://github.com/dyq0811), [@google-antigravity](https://github.com/google-antigravity)
+
+Developers: [@dyq0811](https://github.com/dyq0811), [@google-antigravity](https://github.com/google-antigravity)
 
 ![OIIA Kitten Runner gameplay](screenshot.png)
 
