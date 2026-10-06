@@ -9,17 +9,9 @@ Jump over cucumbers, vacuums, spray bottles and bees!
 
 🪩 Psst — click the tiny cat under the disco ball next to Pause. The faster you click, the harder it OIIA-OIIAs.
 
-## Run it
+## Play it
 
-Download the files, then start a local server inside the folder:
-
-```sh
-python3 -m http.server 8000
-```
-
-Open http://localhost:8000 in your browser.
-
-> The voice control needs the page served from `localhost` or `https`. Opening `index.html` directly works for keyboard play only.
+Visit **[oiia-cat.0811dingy.workers.dev](https://oiia-cat.0811dingy.workers.dev)** — no install needed.
 
 ## How to play
 
